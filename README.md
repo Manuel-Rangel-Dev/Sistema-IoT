@@ -5,16 +5,14 @@
 [![Platform](https://img.shields.io/badge/Platform-ESP32-green)](https://www.espressif.com/)
 [![Network](https://img.shields.io/badge/Network-LTE%20Claro%20Colombia-red)](https://www.claro.com.co/)
 
-Colección de proyectos funcionales desarrollados con **ESP32** y el módulo **SIM7670G** (LTE Cat-1), orientados a conectividad celular, control de hardware y comunicación serial. Desarrollados y probados en Colombia con red **Claro**.
-
-> 🚧 **En desarrollo activo** — Se planea integrar la librería [TinyGSM](https://github.com/vshymanskyy/TinyGSM) para abstracción del módem en próximas versiones.
+Colección de proyectos funcionales desarrollados con **ESP32** y el módulo **SIM7670G** (LTE Cat-1), orientados a conectividad celular, comunicación serial y recolección de datos en la nube mediante AWS IoT Core. Desarrollados y probados en Colombia con red **Claro**.
 
 ---
 
 ## 📁 Estructura del Repositorio
 
 ```
-ESP32-SIM7670G-Projects/
+ESP32-SIM7670G-Projects/01_Pruebas_iniciales/
 │
 ├── RedLTE/                 # Conexión a red LTE (Claro Colombia)
 │   ├── src/
@@ -119,10 +117,10 @@ monitor_speed = 115200
 
 ; Librerías (agregar según el proyecto)
 lib_deps =
-    ; Para proyectos LTE con abstracción (próximamente):
+    ; Para proyectos LTE con abstracción:
     ; vshymanskyy/TinyGSM @ ^0.11.7
-    ; Para WiFi avanzado:
-    ; tzapu/WiFiManager @ ^2.0.17
+    ; Para el monitoreo eléctrico del motor:
+    ; adafruit/Adafruit INA219@^1.2.3
 ```
 
 ### Instalación del entorno
@@ -136,9 +134,9 @@ lib_deps =
 4. Abrir la carpeta del proyecto que quieres usar en VS Code
 5. PlatformIO descargará automáticamente las dependencias al compilar (`Ctrl+Alt+B`)
 
-### Librería TinyGSM (integración futura)
+### Librería TinyGSM
 
-Se planea migrar los proyectos de conectividad celular a [TinyGSM](https://github.com/vshymanskyy/TinyGSM), que permite usar el SIM7670G como si fuera un cliente de red estándar (HTTP, MQTT, TCP). Para instalarla manualmente:
+Se hace uso de la librería [TinyGSM](https://github.com/vshymanskyy/TinyGSM), que permite usar el SIM7670G como si fuera un cliente de red estándar (HTTP, MQTT, TCP). Para instalarla manualmente:
 
 ```ini
 lib_deps =
