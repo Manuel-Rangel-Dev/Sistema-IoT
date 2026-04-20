@@ -65,7 +65,7 @@ ESP32-SIM7670G-Projects/01_Pruebas_iniciales/
 ## 🗂️ Proyectos
 
 ### 1. 📶 Conexión a Red LTE — `RedLTE/`
-Configura el APN de Claro Colombia y verifica el registro en red LTE usando comandos AT directos al SIM7670G.
+Configura el APN de Claro Colombia y verifica el registro en red LTE usando comandos AT directos al SIM7670G y la librería TinyGSM.
 
 **Lo que hace:**
 - Configura APN (`internet.comcel.com.co`)

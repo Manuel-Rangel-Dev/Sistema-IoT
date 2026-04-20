@@ -1,11 +1,16 @@
 #include <Arduino.h>
 
+//TinyGSM 
+#define TINY_GSM_MODEM_SIM7600
+#include <TinyGsmClient.h>
+
 // Pines UART hacia el SIM7670G (modo UART, USB DIP en OFF)
 #define SIM_RX  17
 #define SIM_TX  18
 #define SIM_DTR 45
 
 HardwareSerial simSerial(1);
+TinyGsm modem(simSerial);
 
 // Enviar comando AT y mostrar respuesta
 void sendAT(const char* cmd, int waitMs = 2000) {
@@ -27,11 +32,50 @@ void sendAT(const char* cmd, int waitMs = 2000) {
 
 // Sincronizar comunicación con el módulo
 void syncSIM() {
+  Serial.println("Sincronizando con SIM7670G...");
   for (int i = 0; i < 5; i++) {
     simSerial.println("AT");
     delay(500);
-    if (simSerial.find("OK")) return;
+    if (simSerial.find("OK")) {
+      Serial.println("Módulo respondiendo.");
+      return;
+    }
   }
+  Serial.println("Advertencia: módulo no responde aún.");
+}
+
+void conectarLTE() {
+  Serial.println("\n=== Iniciando conexión LTE (Claro Colombia) ===");
+
+  syncSIM();
+  sendAT("ATE0");           // desactivar eco
+  sendAT("AT+CPIN?");       // verificar SIM
+
+  Serial.println("Esperando registro en red...");
+  modem.waitForNetwork(60000UL);
+
+  if (modem.isNetworkConnected()) {
+    Serial.println("Red registrada correctamente.");
+  } else {
+    Serial.println("Advertencia: no se registró en red.");
+  }
+
+  sendAT("AT+CSQ");         // calidad de señal
+  sendAT("AT+CREG?");       // estado registro
+  sendAT("AT+CEREG?");      // estado LTE
+
+  Serial.println("Conectando a APN Claro...");
+  modem.gprsConnect("internet.comcel.com.co", "", "");
+
+  if (modem.isGprsConnected()) {
+    Serial.println("Conexión LTE exitosa.");
+    Serial.print("IP asignada: ");
+    Serial.println(modem.getLocalIP());
+  } else {
+    Serial.println("Error: no se pudo conectar al APN.");
+  }
+
+  Serial.println("=== Fin configuración LTE ===\n");
 }
 
 void setup() {
@@ -45,31 +89,8 @@ void setup() {
 
   delay(8000); // esperar arranque completo del módulo
 
-  Serial.println("=== SIM7670G Claro Test ===");
+  conectarLTE();
 
-  syncSIM();                 // sincronizar UART
-  sendAT("ATE0");            // desactivar eco
-
-  sendAT("AT+CPIN?");        // verificar SIM
-  sendAT("AT+CSQ");          // calidad de señal
-
-  sendAT("AT+COPS=0", 5000); // selección automática de operador (Claro)
-
-  sendAT("AT+CREG=2");       // modo extendido
-  sendAT("AT+CREG?");        // estado de registro
-
-  // Configuración APN Claro Colombia
-  sendAT("AT+CGDCONT=1,\"IP\",\"internet.comcel.com.co\"");
-
-  sendAT("AT+CGATT=0", 3000); // reset de attach
-  sendAT("AT+CGATT=1", 5000); // attach a red de datos
-
-  sendAT("AT+CGATT?");        // verificar attach
-  sendAT("AT+CEREG?");        // estado LTE real
-
-  sendAT("AT+CGPADDR");       // obtener IP
-
-  Serial.println("=== Fin ===");
 }
 
 void loop() {
