@@ -159,7 +159,7 @@ Y agrega al inicio de tu `main.cpp`:
 |---|---|---|
 | GPIO 17 (TX2) | RX | Datos hacia el módem |
 | GPIO 18 (RX2) | TX | Datos desde el módem |
-| GPIO 10 | PWRKEY | Encendido/apagado módulo |
+| GPIO 45 | DTR | Encendido/apagado módulo |
 | GND | GND | Tierra común |
 | — | VCC (4.2 V) | Alimentación externa dedicada |
 
