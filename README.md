@@ -16,25 +16,25 @@ Colección de proyectos funcionales desarrollados con **ESP32** y el módulo **S
 ```
 ESP32-SIM7670G-Projects/
 │
-├── 01_lte_connection/          # Conexión a red LTE (Claro Colombia)
+├── RedLTE/                 # Conexión a red LTE (Claro Colombia)
 │   ├── src/
 │   │   └── main.cpp
 │   ├── platformio.ini
 │   └── README.md
 │
-├── 02_dc_motor_control/        # Control de motor DC con PWM
+├── Controlar_MotorDC/       # Control de motor DC con PWM
 │   ├── src/
 │   │   └── main.cpp
 │   ├── platformio.ini
 │   └── README.md
 │
-├── 03_at_terminal/             # Terminal de comandos AT (bridge serial)
+├── Terminal_AT/             # Terminal de comandos AT (bridge serial)
 │   ├── src/
 │   │   └── main.cpp
 │   ├── platformio.ini
 │   └── README.md
 │
-├── 04_wifi_connection/         # Gestión de conectividad WiFi
+├── Wifi/                    # Gestión de conectividad WiFi
 │   ├── src/
 │   │   └── main.cpp
 │   ├── platformio.ini
@@ -51,10 +51,10 @@ ESP32-SIM7670G-Projects/
 
 | Componente | Modelo / Descripción | Cantidad |
 |---|---|---|
-| Microcontrolador | ESP32 DevKit v1 (o similar, 38 pines) | 1 |
+| Microcontrolador | ESP32-S3 DevKit v1 (o similar, 38 pines) | 1 |
 | Módulo LTE/GNSS | SIM7670G (LTE Cat-1, GNSS integrado) | 1 |
-| Driver de motor | L298N o L9110S | 1 |
-| Motor DC | Motor genérico 5–12 V | 1 |
+| Driver de motor | L293D | 1 |
+| Motor DC | Motor de codificador TT de alto par (5-12V) | 1 |
 | SIM Card | SIM Claro Colombia (plan con datos activo) | 1 |
 | Fuente de alimentación | 5 V / 2 A mínimo recomendado | 1 |
 | Cables jumper | Macho-Macho / Macho-Hembra | varios |
@@ -66,7 +66,7 @@ ESP32-SIM7670G-Projects/
 
 ## 🗂️ Proyectos
 
-### 1. 📶 Conexión a Red LTE — `01_lte_connection/`
+### 1. 📶 Conexión a Red LTE — `RedLTE/`
 Configura el APN de Claro Colombia y verifica el registro en red LTE usando comandos AT directos al SIM7670G.
 
 **Lo que hace:**
@@ -76,17 +76,16 @@ Configura el APN de Claro Colombia y verifica el registro en red LTE usando coma
 
 ---
 
-### 2. ⚙️ Control de Motor DC — `02_dc_motor_control/`
-Control de velocidad y dirección de un motor DC usando el canal LEDC (PWM) del ESP32.
+### 2. ⚙️ Control de Motor DC — `Controlar_MotorDC/`
+Control de velocidad de un motor DC usando el canal LEDC (PWM) del ESP32.
 
 **Lo que hace:**
 - Control de velocidad con `ledcWrite()`
-- Control de dirección (horario / antihorario)
 - Frenado por software
 
 ---
 
-### 3. 🖥️ Terminal de Comandos AT — `03_at_terminal/`
+### 3. 🖥️ Terminal de Comandos AT — `Terminal_AT/`
 Bridge serial entre el PC y el módulo SIM7670G. Permite enviar comandos AT manualmente desde el Serial Monitor de VS Code.
 
 **Lo que hace:**
@@ -96,7 +95,7 @@ Bridge serial entre el PC y el módulo SIM7670G. Permite enviar comandos AT manu
 
 ---
 
-### 4. 📡 Conexión a WiFi — `04_wifi_connection/`
+### 4. 📡 Conexión a WiFi — `Wifi/`
 Gestión básica de conectividad WiFi con el ESP32.
 
 **Lo que hace:**
@@ -132,7 +131,7 @@ lib_deps =
 2. Instalar la extensión **PlatformIO IDE** desde el Marketplace de VS Code
 3. Clonar este repositorio:
    ```bash
-   git clone https://github.com/TU_USUARIO/ESP32-SIM7670G-Projects.git
+   git clone https://github.com/Manuel-Rangel-Dev/Sistema-IoT
    ```
 4. Abrir la carpeta del proyecto que quieres usar en VS Code
 5. PlatformIO descargará automáticamente las dependencias al compilar (`Ctrl+Alt+B`)
@@ -159,8 +158,8 @@ Y agrega al inicio de tu `main.cpp`:
 | ESP32 GPIO | SIM7670G Pin | Descripción |
 |---|---|---|
 | GPIO 17 (TX2) | RX | Datos hacia el módem |
-| GPIO 16 (RX2) | TX | Datos desde el módem |
-| GPIO 4 | PWRKEY | Encendido/apagado módulo |
+| GPIO 18 (RX2) | TX | Datos desde el módem |
+| GPIO 10 | PWRKEY | Encendido/apagado módulo |
 | GND | GND | Tierra común |
 | — | VCC (4.2 V) | Alimentación externa dedicada |
 
