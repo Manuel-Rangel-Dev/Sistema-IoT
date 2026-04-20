@@ -1,0 +1,59 @@
+# =============================================================================
+# .gitignore para proyectos PlatformIO + VS Code con ESP32
+# =============================================================================
+
+# ─── PlatformIO ──────────────────────────────────────────────────────────────
+# Carpeta principal de build, caché y librerías descargadas automáticamente.
+# NUNCA subir esto — se regenera sola al compilar.
+.pio/
+
+# Entorno virtual de Python que usa PlatformIO internamente
+.pioenvs/
+.piolibdeps/
+
+# ─── VS Code ─────────────────────────────────────────────────────────────────
+# Configuración local del editor (rutas absolutas, extensiones personales, etc.)
+# Excepción: si tu equipo comparte la misma config, podrías incluir algunos archivos.
+.vscode/
+
+# ─── Sistema Operativo ───────────────────────────────────────────────────────
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.fuse_hidden*
+.Trash-*
+
+# ─── Archivos de credenciales y configuración sensible ───────────────────────
+# Si alguna vez hardcodeas credenciales, asegúrate de que estos no se suban:
+secrets.h
+config_private.h
+credentials.h
+*.key
+*.pem
+
+# ─── Archivos temporales y de compilación genéricos ──────────────────────────
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+
+# ─── Notas personales que no quieres publicar ────────────────────────────────
+notas.txt
+notas_personales.md
+TODO_privado.md
