@@ -176,6 +176,7 @@ print(f"CSV guardado en: {archivo_salida}")
 ```
 
 ##### Uso del script
+
 Primero se debe ejecutar cualquier código que tenga visualización de datos en el monitor serial, este genera un archivo que termina en `.log`. Luego, en la terminal se ejecuta `python filtrar_log.py datos.log`, donde el archivo `datos.log` debe ser reemplazado por el nombre del archivo generado. Por último, esto genera un archivo `datos.csv` con la estructura deseada para poder ser usado en comparaciones.
 ---
 
