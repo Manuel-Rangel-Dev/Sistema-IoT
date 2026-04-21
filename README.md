@@ -1,38 +1,27 @@
-# 📡 ESP32 + SIM7670G — Proyectos de Conectividad y Control
+# 📡 ESP32-S3 + SIM7670G — Proyectos de Conectividad y Control
 
 [![PlatformIO](https://img.shields.io/badge/Built%20with-PlatformIO-orange?logo=platformio)](https://platformio.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-ESP32-green)](https://www.espressif.com/)
+[![Platform](https://img.shields.io/badge/Platform-ESP32--S3-green)](https://www.espressif.com/)
 [![Network](https://img.shields.io/badge/Network-LTE%20Claro%20Colombia-red)](https://www.claro.com.co/)
+[![Cloud](https://img.shields.io/badge/Cloud-AWS-FF9900?logo=amazonaws)](https://aws.amazon.com/)
 
-Colección de proyectos funcionales desarrollados con **ESP32** y el módulo **SIM7670G** (LTE Cat-1), orientados a conectividad celular, comunicación serial y recolección de datos en la nube mediante AWS IoT Core. Desarrollados y probados en Colombia con red **Claro**.
+Colección de proyectos desarrollados con **ESP32-S3** y el módulo **SIM7670G** (LTE Cat-1), orientados a conectividad celular, control de hardware y recolección de datos en la nube mediante **AWS**. Desarrollados y probados en Colombia con red **Claro**.
 
 ---
 
 ## 📁 Estructura del Repositorio
 
 ```
-ESP32-SIM7670G-Projects/01_Pruebas_iniciales/
+ESP32-S3-SIM7670G-4G/
 │
-├── RedLTE/                 # Conexión a red LTE (Claro Colombia)
-│   ├── src/
-│   │   └── main.cpp
-│   ├── platformio.ini
-│   └── README.md
+├── 01_Pruebas_iniciales/        # Scripts independientes de validación de hardware
+│   ├── RedLTE/                  # Conexión a red LTE con TinyGSM
+│   ├── Controlar_MotorDC/       # Control de velocidad por PWM
+│   ├── Terminal_AT/             # Bridge serial PC ↔ SIM7670G
+│   └── Wifi/                   # Conectividad WiFi básica
 │
-├── Controlar_MotorDC/       # Control de motor DC con PWM
-│   ├── src/
-│   │   └── main.cpp
-│   ├── platformio.ini
-│   └── README.md
-│
-├── Terminal_AT/             # Terminal de comandos AT (bridge serial)
-│   ├── src/
-│   │   └── main.cpp
-│   ├── platformio.ini
-│   └── README.md
-│
-├── Wifi/                    # Gestión de conectividad WiFi
+├── 02_RedLTE-MotorDC/           # Sistema integrado: monitoreo de motor vía LTE → AWS
 │   ├── src/
 │   │   └── main.cpp
 │   ├── platformio.ini
@@ -40,7 +29,7 @@ ESP32-SIM7670G-Projects/01_Pruebas_iniciales/
 │
 ├── .gitignore
 ├── LICENSE
-└── README.md                   ← Estás aquí
+└── README.md                    ← Estás aquí
 ```
 
 ---
@@ -49,10 +38,12 @@ ESP32-SIM7670G-Projects/01_Pruebas_iniciales/
 
 | Componente | Modelo / Descripción | Cantidad |
 |---|---|---|
-| Microcontrolador | ESP32-S3 DevKit v1 (o similar, 38 pines) | 1 |
+| Microcontrolador | ESP32-S3 DevKit | 1 |
 | Módulo LTE/GNSS | SIM7670G (LTE Cat-1, GNSS integrado) | 1 |
 | Driver de motor | L293D | 1 |
-| Motor DC | Motor de codificador TT de alto par (5-12V) | 1 |
+| Motor DC | Motor TT de alto par con encoder integrado (5–12 V) | 1 |
+| Sensor eléctrico | INA219 (voltaje, corriente y potencia) | 1 |
+| Potenciómetro | 10 kΩ (control manual de PWM) | 1 |
 | SIM Card | SIM Claro Colombia (plan con datos activo) | 1 |
 | Fuente de alimentación | 5 V / 2 A mínimo recomendado | 1 |
 | Cables jumper | Macho-Macho / Macho-Hembra | varios |
@@ -64,64 +55,131 @@ ESP32-SIM7670G-Projects/01_Pruebas_iniciales/
 
 ## 🗂️ Proyectos
 
-### 1. 📶 Conexión a Red LTE — `RedLTE/`
-Configura el APN de Claro Colombia y verifica el registro en red LTE usando comandos AT directos al SIM7670G y la librería TinyGSM.
+### 📂 01 — Pruebas Iniciales
 
-**Lo que hace:**
+Scripts independientes desarrollados para validar cada componente por separado antes de integrarlos. Son el punto de partida del proyecto.
+
+#### 📶 Conexión a Red LTE — `01_Pruebas_iniciales/RedLTE/`
+Configura el APN de Claro Colombia y verifica el registro en red LTE usando la librería **TinyGSM** con el SIM7670G.
+
 - Configura APN (`internet.comcel.com.co`)
-- Verifica señal y registro en red con `AT+CSQ` y `AT+CREG`
-- Muestra estado en Serial Monitor
+- Verifica señal y registro en red (`AT+CSQ`, `AT+CREG`)
+- Muestra estado por Serial Monitor
 
 ---
 
-### 2. ⚙️ Control de Motor DC — `Controlar_MotorDC/`
-Control de velocidad de un motor DC usando el canal LEDC (PWM) del ESP32.
+#### ⚙️ Control de Motor DC — `01_Pruebas_iniciales/Controlar_MotorDC/`
+Control de velocidad de un motor DC usando el canal LEDC (PWM) del ESP32-S3.
 
-**Lo que hace:**
 - Control de velocidad con `ledcWrite()`
 - Frenado por software
 
 ---
 
-### 3. 🖥️ Terminal de Comandos AT — `Terminal_AT/`
-Bridge serial entre el PC y el módulo SIM7670G. Permite enviar comandos AT manualmente desde el Serial Monitor de VS Code.
+#### 🖥️ Terminal de Comandos AT — `01_Pruebas_iniciales/Terminal_AT/`
+Bridge serial entre el PC y el módulo SIM7670G para enviar comandos AT manualmente desde el Serial Monitor.
 
-**Lo que hace:**
-- Reenvío bidireccional: `PC → ESP32 → SIM7670G` y viceversa
-- Ideal para depuración y exploración del módem
+- Reenvío bidireccional: `PC → ESP32-S3 → SIM7670G` y viceversa
+- Útil para depuración y exploración del módem
 - Baudrate configurable
 
 ---
 
-### 4. 📡 Conexión a WiFi — `Wifi/`
-Gestión básica de conectividad WiFi con el ESP32.
+#### 📡 Conexión a WiFi — `01_Pruebas_iniciales/Wifi/`
+Gestión básica de conectividad WiFi con el ESP32-S3.
 
-**Lo que hace:**
 - Conexión a red WPA2
 - Reconexión automática si se pierde el enlace
 - Muestra IP asignada por Serial Monitor
 
 ---
 
-## ⚙️ Configuración en PlatformIO
+### 🔬 02 — Sistema Integrado: Monitoreo de Motor vía LTE → AWS — `02_RedLTE-MotorDC/`
 
-Cada proyecto tiene su propio `platformio.ini`. El siguiente es un ejemplo base para todos los proyectos:
+Proyecto principal que integra todo lo validado en las pruebas iniciales. El ESP32-S3 recolecta variables eléctricas y mecánicas de un motor DC en tiempo real, y las transmite mediante **LTE (TinyGSM)** a un servidor **HTTP en AWS**.
+
+#### Variables monitoreadas
+
+| Variable | Sensor / Fuente | Descripción |
+|---|---|---|
+| Voltaje (V) | INA219 (I²C) | Tensión en los bornes del motor |
+| Corriente (mA) | INA219 (I²C) | Consumo instantáneo del motor |
+| Potencia (mW) | INA219 (calculada) | Potencia eléctrica consumida |
+| Velocidad (RPM) | Encoder integrado del motor | Pulsos contados por interrupción |
+| PWM (%) | Potenciómetro + código | Duty cycle aplicado al L293D |
+
+#### Flujo de datos
+
+```
+Potenciómetro ──► PWM ──► L293D ──► Motor DC
+                                        │
+                              Encoder (RPM) ──────────────┐
+                              INA219 (V, I, P) ───────────┤
+                                                          ▼
+                                               ESP32-S3 (TinyGSM)
+                                                          │
+                                                    SIM7670G (LTE)
+                                                          │
+                                                   Claro Colombia
+                                                          │
+                                              Servidor HTTP en AWS
+```
+
+#### Librerías utilizadas
 
 ```ini
-; platformio.ini — ejemplo base
-[env:esp32dev]
-platform  = espressif32
-board     = esp32dev
-framework = arduino
-monitor_speed = 115200
-
-; Librerías (agregar según el proyecto)
 lib_deps =
-    ; Para proyectos LTE con abstracción:
-    ; vshymanskyy/TinyGSM @ ^0.11.7
-    ; Para el monitoreo eléctrico del motor:
-    ; adafruit/Adafruit INA219@^1.2.3
+    vshymanskyy/TinyGSM @ ^0.11.7
+    adafruit/Adafruit INA219 @ ^1.2.3
 ```
+
+#### 📝 Registro de datos y conversión a CSV
+
+Para poder realizar una comparación entre los datos enviados del motor y los datos recibidos en el servidor **HTTP en AWS**, se implementó un sistema de registro automático del monitor serial y su posterior conversión a .csv.
+
+En el archivo `platformio.ini` se agrega una línea de configuración que permite guardar lo que aparezca en el monitor serial como archivo.
+
+```ini
+[env:esp32-s3-devkitc-1]
+...
+monitor_filters = log2file
+...
+```
+
+Esto genera un archivo con todo el flujo serial, incluyendo mensajes como:
+
+```
+[HTTP] Conectando al servidor...
+1500.25,2.30,12.50,28.75,200
+[HTTP] ✓ Datos enviados correctamente.
+```
+
+Dado que el archivo `.log` contiene tanto datos como mensajes de depuración, se desarrolló un script en Python para extraer únicamente las líneas válidas y convertirlas a `.csv`.
+
+```Python
+import re
+import sys
+
+patron = re.compile(r'^-?\d+\.\d+,-?\d+\.\d+,-?\d+\.\d+,-?\d+\.\d+,\d+')
+
+archivo_entrada = sys.argv[1]
+archivo_salida  = archivo_entrada.replace(".log", ".csv")
+
+with open(archivo_entrada, "r") as f_in, open(archivo_salida, "w") as f_out:
+    f_out.write("rpm,current_A,voltage_V,power_W,pwm\n")
+    for linea in f_in:
+        linea = linea.strip()
+        if patron.match(linea):
+            f_out.write(linea + "\n")
+
+print(f"CSV guardado en: {archivo_salida}")
+```
+
+##### Uso del script
+Primero se debe ejecutar cualquier código que tenga visualización de datos en el monitor serial, este genera un archivo que termina en `.log`. Luego, en la terminal se ejecuta `python filtrar_log.py datos.log`, donde el archivo `datos.log` debe ser reemplazado por el nombre del archivo generado. Por último, esto genera un archivo `datos.csv` con la estructura deseada para poder ser usado en comparaciones.
+---
+
+## ⚙️ Configuración en PlatformIO
 
 ### Instalación del entorno
 
@@ -131,19 +189,27 @@ lib_deps =
    ```bash
    git clone https://github.com/Manuel-Rangel-Dev/Sistema-IoT
    ```
-4. Abrir la carpeta del proyecto que quieres usar en VS Code
+4. Abrir la carpeta del proyecto que deseas usar en VS Code
 5. PlatformIO descargará automáticamente las dependencias al compilar (`Ctrl+Alt+B`)
 
-### Librería TinyGSM
-
-Se hace uso de la librería [TinyGSM](https://github.com/vshymanskyy/TinyGSM), que permite usar el SIM7670G como si fuera un cliente de red estándar (HTTP, MQTT, TCP). Para instalarla manualmente:
+### `platformio.ini` base
 
 ```ini
+[env:esp32-s3-devkitc-1]
+platform      = espressif32
+board         = esp32-s3-devkitc-1
+framework     = arduino
+monitor_speed = 115200
+
 lib_deps =
     vshymanskyy/TinyGSM @ ^0.11.7
+    adafruit/Adafruit INA219 @ ^1.2.3
 ```
 
-Y agrega al inicio de tu `main.cpp`:
+### Configuración de TinyGSM
+
+Agrega al inicio de `main.cpp`, **antes** de cualquier otro include:
+
 ```cpp
 #define TINY_GSM_MODEM_SIM7600   // SIM7670G es compatible con este perfil
 #include <TinyGsmClient.h>
@@ -151,13 +217,13 @@ Y agrega al inicio de tu `main.cpp`:
 
 ---
 
-## 🔌 Conexiones Típicas (Pinout)
+## 🔌 Pinout — ESP32-S3 ↔ SIM7670G
 
-| ESP32 GPIO | SIM7670G Pin | Descripción |
+| ESP32-S3 GPIO | SIM7670G Pin | Descripción |
 |---|---|---|
-| GPIO 17 (TX2) | RX | Datos hacia el módem |
-| GPIO 18 (RX2) | TX | Datos desde el módem |
-| GPIO 45 | DTR | Encendido/apagado módulo |
+| GPIO 17 (TX) | RX | Datos hacia el módem |
+| GPIO 18 (RX) | TX | Datos desde el módem |
+| GPIO 45 | DTR | Control de encendido del módulo |
 | GND | GND | Tierra común |
 | — | VCC (4.2 V) | Alimentación externa dedicada |
 
@@ -167,7 +233,7 @@ Y agrega al inicio de tu `main.cpp`:
 
 ## 🤝 Contribuciones
 
-Este es un repositorio de aprendizaje personal, pero las sugerencias son bienvenidas. Si encuentras un error o tienes una mejora, abre un [Issue](../../issues) o envía un Pull Request.
+Repositorio de aprendizaje personal. Las sugerencias son bienvenidas — abre un [Issue](../../issues) o envía un Pull Request.
 
 ---
 

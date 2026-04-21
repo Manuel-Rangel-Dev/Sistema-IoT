@@ -71,6 +71,33 @@ void conectarLTE() {
     Serial.println("Conexión LTE exitosa.");
     Serial.print("IP asignada: ");
     Serial.println(modem.getLocalIP());
+
+    Serial.println("Verificando conexión con ping a Google DNS...");
+    while (simSerial.available()) simSerial.read();
+    simSerial.println("AT+CPING=\"8.8.8.8\",1,2");
+    unsigned long start = millis();
+    String response = "";
+    bool pingExitoso = false;
+    while (millis() - start < 6000) {
+      while (simSerial.available()) {
+        char c = simSerial.read();
+        response += c;
+        Serial.write(c); 
+      }
+      if (response.indexOf("+CPING: 3") != -1) {
+          if (response.indexOf(",0,2") == -1 && response.indexOf(",0,1") == -1) {
+              pingExitoso = true;
+          }
+          break;
+      }
+    }
+
+    if (pingExitoso) {
+      Serial.println("\n[SISTEMA] ✓ Datos activos y navegación confirmada.");
+    } else {
+      Serial.println("\n[SISTEMA] ⚠ Error: IP obtenida pero sin respuesta de Ping.");
+    }
+
   } else {
     Serial.println("Error: no se pudo conectar al APN.");
   }
