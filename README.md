@@ -135,7 +135,7 @@ lib_deps =
 
 #### 📝 Registro de datos y conversión a CSV
 
-Para poder realizar una comparación entre los datos enviados del motor y los datos recibidos en el servidor **HTTP en AWS**, se implementó un sistema de registro automático del monitor serial y su posterior conversión a .csv.
+Para poder realizar una comparación entre los datos enviados del motor y los datos recibidos en el servidor **HTTP en AWS**, se implementó un sistema de registro automático del monitor serial y su posterior conversión a `.csv`.
 
 En el archivo `platformio.ini` se agrega una línea de configuración que permite guardar lo que aparezca en el monitor serial como archivo.
 
@@ -178,6 +178,7 @@ print(f"CSV guardado en: {archivo_salida}")
 ##### Uso del script
 
 Primero se debe ejecutar cualquier código que tenga visualización de datos en el monitor serial, este genera un archivo que termina en `.log`. Luego, en la terminal se ejecuta `python filtrar_log.py datos.log`, donde el archivo `datos.log` debe ser reemplazado por el nombre del archivo generado. Por último, esto genera un archivo `datos.csv` con la estructura deseada para poder ser usado en comparaciones.
+
 ---
 
 ## ⚙️ Configuración en PlatformIO
