@@ -27,6 +27,18 @@ ESP32-S3-SIM7670G-4G/
 │   ├── platformio.ini
 │   └── README.md
 │
+├── 03_Variable_SMS/             # Control de variable PWM mediante comandos SMS
+│   ├── src/
+│   │   └── main.cpp
+│   └── platformio.ini
+│
+├── 04_RedLTE-MotorDC-SMS/       # Monitoreo LTE + control PWM del motor por SMS
+│   ├── src/
+│   │   └── main.cpp
+│   └── platformio.ini
+│
+├── Servidor/                    # Servidor HTTP y dashboard en Streamlit
+│
 ├── .gitignore
 ├── LICENSE
 └── README.md                    ← Estás aquí
@@ -43,13 +55,15 @@ ESP32-S3-SIM7670G-4G/
 | Driver de motor | L293D | 1 |
 | Motor DC | Motor TT de alto par con encoder integrado (5–12 V) | 1 |
 | Sensor eléctrico | INA219 (voltaje, corriente y potencia) | 1 |
-| Potenciómetro | 10 kΩ (control manual de PWM) | 1 |
+| Potenciómetro | 10 kΩ (control manual de PWM en `02`; no se usa para control en `04`) | 1 |
 | SIM Card | SIM Claro Colombia (plan con datos activo) | 1 |
 | Fuente de alimentación | 5 V / 2 A mínimo recomendado | 1 |
 | Cables jumper | Macho-Macho / Macho-Hembra | varios |
 | Protoboard | Tamaño estándar (830 puntos) | 1 |
 
 > ⚠️ **Nota de alimentación:** El SIM7670G puede consumir picos de hasta 2 A durante transmisión LTE. Se recomienda usar una fuente dedicada o un capacitor de desacople de al menos 1000 µF en la línea de alimentación del módulo.
+
+> **Nota sobre el PWM:** En `02_RedLTE-MotorDC` el PWM se controla con potenciómetro. En `04_RedLTE-MotorDC-SMS` el potenciómetro se eliminó del control y el PWM se ajusta únicamente por SMS.
 
 ---
 
@@ -178,6 +192,151 @@ print(f"CSV guardado en: {archivo_salida}")
 ##### Uso del script
 
 Primero se debe ejecutar cualquier código que tenga visualización de datos en el monitor serial, este genera un archivo que termina en `.log`. Luego, en la terminal se ejecuta `python filtrar_log.py datos.log`, donde el archivo `datos.log` debe ser reemplazado por el nombre del archivo generado. Por último, esto genera un archivo `datos.csv` con la estructura deseada para poder ser usado en comparaciones.
+
+---
+
+### 📩 03 — Control de Variable por SMS — `03_Variable_SMS/`
+
+Proyecto de validación para controlar una variable interna del ESP32-S3 mediante mensajes SMS recibidos por el SIM7670G. La variable usada para la prueba es `pwm`.
+
+#### Funcionamiento
+
+1. Un usuario envía un SMS al número de la SIM instalada en el SIM7670G.
+2. El mensaje debe tener el formato:
+
+```text
+pwm valor
+```
+
+Ejemplo:
+
+```text
+pwm 230
+```
+
+3. El ESP32-S3 lee el SMS, extrae el número remitente y normaliza el contenido.
+4. Si el comando es válido, actualiza la variable `pwm`.
+5. El módulo responde por SMS al remitente confirmando el cambio.
+
+#### Validaciones implementadas
+
+- Acepta `pwm` en mayúsculas o minúsculas (`pwm 200`, `PWM 200`).
+- Elimina comillas envolventes cuando el módem entrega el contenido como `"pwm 200"`.
+- Tolera espacios extra entre comando y valor.
+- Decodifica contenido UCS2 hexadecimal cuando el módem entrega el SMS en ese formato.
+- Rechaza comandos desconocidos.
+- Valida que el PWM esté entre `0` y `255`.
+- Borra el SMS procesado con `AT+CMGD` para evitar llenar la memoria de la SIM.
+
+#### Comandos AT relevantes
+
+```text
+AT+CSCS="GSM"
+AT+CMGF=1
+AT+CPMS="SM","SM","SM"
+AT+CNMI=2,1,0,0,0
+AT+CMGR=<indice>
+AT+CMGD=<indice>
+```
+
+---
+
+### 🚀 04 — Monitoreo LTE + Motor DC + Control por SMS — `04_RedLTE-MotorDC-SMS/`
+
+Proyecto final integrado. Combina el monitoreo del motor DC de `02_RedLTE-MotorDC` con el control remoto por SMS validado en `03_Variable_SMS`.
+
+La estructura principal de `02_RedLTE-MotorDC` se conserva: encoder, INA219, conexión LTE, empaquetado JSON y envío HTTP al servidor. La diferencia clave es que el control de PWM por potenciómetro fue eliminado y reemplazado por control mediante SMS.
+
+#### Variables monitoreadas y enviadas
+
+| Variable | Sensor / Fuente | Descripción |
+|---|---|---|
+| `rpm` | Encoder integrado del motor | Velocidad calculada a partir de pulsos por interrupción |
+| `current_A` | INA219 | Corriente instantánea en amperios |
+| `voltage_V` | INA219 | Voltaje del motor |
+| `power_W` | INA219 | Potencia consumida en watts |
+| `pwm` | SMS / `g_pwm_actual` | Duty cycle aplicado al L293D |
+
+#### Formato serial
+
+El monitor serial imprime los datos en formato CSV:
+
+```text
+rpm,current_A,voltage_V,power_W,pwm
+0.00,-0.0001,2.516,0.0000,0
+```
+
+El valor de PWM ya no se imprime en una línea separada como `[PWM] Valor actual`. Se refleja únicamente en la última columna del registro CSV.
+
+#### Formato JSON enviado al servidor
+
+Cada muestra se empaqueta y se envía por HTTP al endpoint `/data`:
+
+```json
+{
+  "rpm": 0.00,
+  "current_A": -0.0001,
+  "voltage_V": 2.516,
+  "power_W": 0.0000,
+  "pwm": 200
+}
+```
+
+#### Control PWM por SMS
+
+El usuario envía un SMS con el formato:
+
+```text
+pwm valor
+```
+
+Ejemplo:
+
+```text
+pwm 180
+```
+
+Si el valor es válido, el ESP32-S3 ejecuta:
+
+```cpp
+SetMotorPwm((uint8_t)nuevoPWM);
+```
+
+y responde al remitente:
+
+```text
+PWM actualizado a 180
+```
+
+Si el comando no es válido, responde con un mensaje de error indicando el formato correcto o el rango permitido.
+
+#### Recepción robusta de SMS
+
+Además de escuchar la notificación inmediata `+CMTI`, el firmware consulta periódicamente mensajes no leídos:
+
+```text
+AT+CMGL="REC UNREAD"
+```
+
+Esto permite procesar comandos SMS incluso si el SIM7670G no entrega la notificación instantánea por UART o si esta se pierde mientras el sistema está enviando datos HTTP.
+
+#### Flujo general
+
+```text
+SMS "pwm valor" ──► SIM7670G ──► ESP32-S3 ──► SetMotorPwm()
+                                               │
+                                               ▼
+                                            L293D ──► Motor DC
+                                               │
+                         Encoder (RPM) ◄──────┘
+                         INA219 (V, I, P)
+                                               │
+                                               ▼
+                              JSON vía HTTP sobre LTE
+                                               │
+                                               ▼
+                          Servidor + dashboard Streamlit
+```
 
 ---
 
