@@ -37,6 +37,23 @@ ESP32-S3-SIM7670G-4G/
 │   │   └── main.cpp
 │   └── platformio.ini
 │
+├── 05_RedLTE_MotorDC_Pantalla/  # Monitoreo LTE + motor DC + pantalla OLED
+│   ├── src/
+│   │   └── main.cpp
+│   └── platformio.ini
+│
+├── Final/                       # Sistema integrado modular: LTE, SMS, OLED, motor y servidor
+│   ├── src/
+│   │   ├── config.h
+│   │   ├── display_ui.cpp / display_ui.h
+│   │   ├── lte.cpp / lte.h
+│   │   ├── motor.cpp / motor.h
+│   │   ├── sensors.cpp / sensors.h
+│   │   ├── sms.cpp / sms.h
+│   │   ├── telemetry.h
+│   │   └── main.cpp
+│   └── platformio.ini
+│
 ├── Servidor/                    # Servidor HTTP y dashboard en Streamlit
 │
 ├── .gitignore
@@ -55,6 +72,7 @@ ESP32-S3-SIM7670G-4G/
 | Driver de motor | L293D | 1 |
 | Motor DC | Motor TT de alto par con encoder integrado (5–12 V) | 1 |
 | Sensor eléctrico | INA219 (voltaje, corriente y potencia) | 1 |
+| Pantalla OLED | SSD1306 128×32 por I²C | 1 |
 | Potenciómetro | 10 kΩ (control manual de PWM en `02`; no se usa para control en `04`) | 1 |
 | SIM Card | SIM Claro Colombia (plan con datos activo) | 1 |
 | Fuente de alimentación | 5 V / 2 A mínimo recomendado | 1 |
@@ -63,7 +81,7 @@ ESP32-S3-SIM7670G-4G/
 
 > ⚠️ **Nota de alimentación:** El SIM7670G puede consumir picos de hasta 2 A durante transmisión LTE. Se recomienda usar una fuente dedicada o un capacitor de desacople de al menos 1000 µF en la línea de alimentación del módulo.
 
-> **Nota sobre el PWM:** En `02_RedLTE-MotorDC` el PWM se controla con potenciómetro. En `04_RedLTE-MotorDC-SMS` el potenciómetro se eliminó del control y el PWM se ajusta únicamente por SMS.
+> **Nota sobre el PWM:** En `02_RedLTE-MotorDC` el PWM se controla con potenciómetro. En `04_RedLTE-MotorDC-SMS` y en `Final` el potenciómetro se eliminó del control y el PWM se ajusta mediante SMS. En `05_RedLTE_MotorDC_Pantalla` se usó un valor de PWM fijo en el código para pruebas de laboratorio.
 
 ---
 
@@ -340,6 +358,118 @@ SMS "pwm valor" ──► SIM7670G ──► ESP32-S3 ──► SetMotorPwm()
 
 ---
 
+### 🖥️ 05 — Monitoreo LTE + Motor DC + Pantalla OLED — `05_RedLTE_MotorDC_Pantalla/`
+
+Este proyecto agrega una pantalla **OLED SSD1306 128×32** al sistema de monitoreo LTE del motor DC. La pantalla permite observar el flujo del programa sin depender únicamente del monitor serial.
+
+#### Funciones principales
+
+- Muestra estados del sistema durante el arranque, la conexión LTE, el registro en red y el envío de datos.
+- Muestra mediciones del motor: RPM, corriente, voltaje, potencia y PWM aplicado.
+- Muestra respuestas de comandos AT relevantes del SIM7670G, por ejemplo:
+
+```text
+ATE0: OK
+CPIN: +CPIN: READY
+CSQ: +CSQ: ...
+CREG: +CREG: ...
+CEREG: +CEREG: ...
+```
+
+#### PWM de prueba
+
+En este proyecto se reemplazó temporalmente el control por potenciómetro por un valor fijo definido en el código. Esto se hizo para facilitar pruebas controladas del motor sin depender de una entrada analógica externa.
+
+El valor se ajusta en:
+
+```cpp
+const uint8_t kPwmPrueba = 120;
+```
+
+El rango permitido sigue siendo de `0` a `255`, donde `0` apaga el motor y `255` aplica el máximo PWM.
+
+---
+
+### ✅ Final — Sistema Integrado Modular — `Final/`
+
+El proyecto `Final` combina las funcionalidades desarrolladas en `04_RedLTE-MotorDC-SMS` y `05_RedLTE_MotorDC_Pantalla`. El resultado es un sistema completo que mide variables del motor, envía datos por LTE a un servidor, muestra el estado del proceso en una pantalla OLED y permite cambiar el PWM mediante mensajes SMS.
+
+#### Funcionalidades integradas
+
+- Lectura de RPM mediante encoder.
+- Lectura de voltaje, corriente y potencia mediante el INA219.
+- Control del motor DC mediante PWM aplicado al driver L293D.
+- Conexión LTE con el SIM7670G usando TinyGSM.
+- Envío de datos al servidor HTTP en formato JSON.
+- Visualización en pantalla OLED del flujo del código, respuestas AT y mediciones.
+- Cambio remoto del PWM mediante SMS con el formato `pwm valor`.
+- Consulta periódica de SMS no leídos para evitar pérdida de comandos.
+
+#### Comando SMS para cambiar el PWM
+
+El usuario debe enviar un SMS a la SIM instalada en el SIM7670G con el siguiente formato:
+
+```text
+pwm valor
+```
+
+Ejemplo:
+
+```text
+pwm 180
+```
+
+Si el valor es válido, el sistema actualiza el PWM del motor, muestra el cambio en la OLED y responde al remitente:
+
+```text
+PWM actualizado a 180
+```
+
+Si el valor está fuera de rango o el comando no es reconocido, el sistema responde con un mensaje de error. El rango válido es de `0` a `255`.
+
+#### Estructura modular del firmware final
+
+El proyecto `Final` fue dividido en varios archivos para mejorar la organización del código y facilitar el mantenimiento:
+
+| Archivo | Responsabilidad |
+|---|---|
+| `main.cpp` | Coordina el arranque, el ciclo principal, el muestreo, el envío de datos y la gestión de SMS. |
+| `config.h` | Centraliza pines, constantes, APN, servidor, tiempos de muestreo y límites de PWM. |
+| `motor.cpp` / `motor.h` | Inicializa el motor, controla el PWM y calcula las RPM a partir del encoder. |
+| `sensors.cpp` / `sensors.h` | Inicializa el INA219 y lee corriente, voltaje y potencia. |
+| `display_ui.cpp` / `display_ui.h` | Gestiona la pantalla OLED, los estados del sistema y las mediciones mostradas. |
+| `lte.cpp` / `lte.h` | Gestiona el SIM7670G, los comandos AT, la conexión LTE y el envío HTTP. |
+| `sms.cpp` / `sms.h` | Configura SMS, lee mensajes, valida comandos y actualiza el PWM. |
+| `telemetry.h` | Define la estructura de datos usada para transportar las mediciones del sistema. |
+
+#### Flujo general del proyecto final
+
+```text
+SMS "pwm valor" ──► SIM7670G ──► ESP32-S3 ──► Control PWM ──► L293D ──► Motor DC
+                                      │
+                                      ├──► OLED: estados, respuestas AT y mediciones
+                                      │
+                                      ├──► Encoder: cálculo de RPM
+                                      │
+                                      ├──► INA219: voltaje, corriente y potencia
+                                      │
+                                      └──► LTE: envío JSON al servidor HTTP
+```
+
+#### Formato JSON enviado por `Final`
+
+```json
+{
+  "rpm": 0.00,
+  "current_A": 0.0000,
+  "voltage_V": 0.000,
+  "power_W": 0.0000,
+  "pwm": 180
+}
+```
+
+---
+
 ## ⚙️ Configuración en PlatformIO
 
 ### Instalación del entorno
@@ -365,6 +495,8 @@ monitor_speed = 115200
 lib_deps =
     vshymanskyy/TinyGSM @ ^0.11.7
     adafruit/Adafruit INA219 @ ^1.2.3
+    adafruit/Adafruit SSD1306
+    adafruit/Adafruit GFX Library
 ```
 
 ### Configuración de TinyGSM
