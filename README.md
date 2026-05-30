@@ -1,4 +1,4 @@
-# 📡 ESP32-S3 + SIM7670G — Proyectos de Conectividad y Control
+# ESP32-S3 + SIM7670G - Monitoreo, control y telemetria IoT
 
 [![PlatformIO](https://img.shields.io/badge/Built%20with-PlatformIO-orange?logo=platformio)](https://platformio.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -6,303 +6,147 @@
 [![Network](https://img.shields.io/badge/Network-LTE%20Claro%20Colombia-red)](https://www.claro.com.co/)
 [![Cloud](https://img.shields.io/badge/Cloud-AWS-FF9900?logo=amazonaws)](https://aws.amazon.com/)
 
-Colección de proyectos desarrollados con **ESP32-S3** y el módulo **SIM7670G** (LTE Cat-1), orientados a conectividad celular, control de hardware y recolección de datos en la nube mediante **AWS**. Desarrollados y probados en Colombia con red **Claro**.
+Repositorio de proyectos para una placa ESP32-S3 con modulo SIM7670G. El sistema evoluciona desde pruebas aisladas de hardware hasta una solucion final que mide un motor DC, envia telemetria por LTE a un servidor Flask, muestra datos en una OLED, obtiene posicion GNSS, consulta parametros de red LTE y permite controlar el motor desde un dashboard Streamlit o por SMS.
 
----
+Los firmwares estan hechos con Arduino Framework en PlatformIO y fueron configurados para red Claro Colombia con APN `internet.comcel.com.co`.
 
-## 📁 Estructura del Repositorio
+## Estructura del repositorio
 
-```
+```text
 ESP32-S3-SIM7670G-4G/
-│
-├── 01_Pruebas_iniciales/        # Scripts independientes de validación de hardware
-│   ├── RedLTE/                  # Conexión a red LTE con TinyGSM
-│   ├── Controlar_MotorDC/       # Control de velocidad por PWM
-│   ├── Terminal_AT/             # Bridge serial PC ↔ SIM7670G
-│   └── Wifi/                   # Conectividad WiFi básica
-│
-├── 02_RedLTE-MotorDC/           # Sistema integrado: monitoreo de motor vía LTE → AWS
-│   ├── src/
-│   │   └── main.cpp
-│   ├── platformio.ini
-│   └── README.md
-│
-├── 03_Variable_SMS/             # Control de variable PWM mediante comandos SMS
-│   ├── src/
-│   │   └── main.cpp
-│   └── platformio.ini
-│
-├── 04_RedLTE-MotorDC-SMS/       # Monitoreo LTE + control PWM del motor por SMS
-│   ├── src/
-│   │   └── main.cpp
-│   └── platformio.ini
-│
-├── 05_RedLTE_MotorDC_Pantalla/  # Monitoreo LTE + motor DC + pantalla OLED
-│   ├── src/
-│   │   └── main.cpp
-│   └── platformio.ini
-│
-├── Final/                       # Sistema integrado modular: LTE, SMS, OLED, motor y servidor
-│   ├── src/
-│   │   ├── config.h
-│   │   ├── display_ui.cpp / display_ui.h
-│   │   ├── lte.cpp / lte.h
-│   │   ├── motor.cpp / motor.h
-│   │   ├── sensors.cpp / sensors.h
-│   │   ├── sms.cpp / sms.h
-│   │   ├── telemetry.h
-│   │   └── main.cpp
-│   └── platformio.ini
-│
-├── Servidor/                    # Servidor HTTP y dashboard en Streamlit
-│
-├── .gitignore
-├── LICENSE
-└── README.md                    ← Estás aquí
+|-- 01_Pruebas_iniciales/
+|   |-- Controlar_MotorDC/        # Motor, encoder, INA219 y PWM por monitor serial
+|   |-- RedLTE/                   # Registro LTE, APN, IP y prueba de ping
+|   |-- Terminal_AT/              # Puente serial PC <-> SIM7670G
+|   `-- Wifi/                     # Plantilla base de PlatformIO, sin WiFi implementado
+|-- 02_RedLTE-MotorDC/            # Motor + INA219 + LTE + POST HTTP
+|-- 03_Variable_SMS/              # Comandos SMS para actualizar una variable PWM
+|-- 04_RedLTE-MotorDC-SMS/        # Motor + mediciones + LTE + control PWM por SMS
+|-- 05_RedLTE_MotorDC_Pantalla/   # Motor + mediciones + LTE + OLED, PWM fijo de prueba
+|-- 06_GPS/                       # Prueba aislada GNSS con AT+CGNSSINFO
+|-- Final/                        # Firmware integrado con PID, GPS, OLED, SMS, LTE y servidor
+|-- Servidor/
+|   |-- server.py                 # API Flask para datos y control
+|   `-- app.py                    # Dashboard Streamlit
+|-- LICENSE
+`-- README.md
 ```
 
----
+## Hardware usado
 
-## 🧰 Hardware Utilizado
+| Componente | Descripcion |
+|---|---|
+| Microcontrolador | ESP32-S3 DevKit / placa ESP32-S3-SIM7670G |
+| Modulo celular | SIM7670G LTE Cat-1 con GNSS |
+| Driver de motor | L293D |
+| Motor DC | Motor con encoder integrado |
+| Sensor electrico | INA219 por I2C |
+| Pantalla | OLED SSD1306 128x32 por I2C |
+| SIM | SIM Claro Colombia con datos y SMS |
+| Alimentacion | Fuente externa para motor y modulo celular |
 
-| Componente | Modelo / Descripción | Cantidad |
-|---|---|---|
-| Microcontrolador | ESP32-S3 DevKit | 1 |
-| Módulo LTE/GNSS | SIM7670G (LTE Cat-1, GNSS integrado) | 1 |
-| Driver de motor | L293D | 1 |
-| Motor DC | Motor TT de alto par con encoder integrado (5–12 V) | 1 |
-| Sensor eléctrico | INA219 (voltaje, corriente y potencia) | 1 |
-| Pantalla OLED | SSD1306 128×32 por I²C | 1 |
-| Potenciómetro | 10 kΩ (control manual de PWM en `02`; no se usa para control en `04`) | 1 |
-| SIM Card | SIM Claro Colombia (plan con datos activo) | 1 |
-| Fuente de alimentación | 5 V / 2 A mínimo recomendado | 1 |
-| Cables jumper | Macho-Macho / Macho-Hembra | varios |
-| Protoboard | Tamaño estándar (830 puntos) | 1 |
+> Nota: el SIM7670G puede consumir picos altos durante transmision LTE. Usa una alimentacion estable y tierra comun entre ESP32, modulo, driver y sensores.
 
-> ⚠️ **Nota de alimentación:** El SIM7670G puede consumir picos de hasta 2 A durante transmisión LTE. Se recomienda usar una fuente dedicada o un capacitor de desacople de al menos 1000 µF en la línea de alimentación del módulo.
+## Pinout principal
 
-> **Nota sobre el PWM:** En `02_RedLTE-MotorDC` el PWM se controla con potenciómetro. En `04_RedLTE-MotorDC-SMS` y en `Final` el potenciómetro se eliminó del control y el PWM se ajusta mediante SMS. En `05_RedLTE_MotorDC_Pantalla` se usó un valor de PWM fijo en el código para pruebas de laboratorio.
+| Funcion | GPIO ESP32-S3 |
+|---|---:|
+| SIM7670G RX/TX UART | RX `17`, TX `18` |
+| SIM7670G DTR | `45` |
+| Encoder A/B | `13`, `14` |
+| L293D IN1/IN2/ENA | `11`, `12`, `10` |
+| I2C SDA/SCL | `16`, `15` |
+| Potenciometro en `02` | `9` |
 
----
+## Configuracion PlatformIO
 
-## 🗂️ Proyectos
+Todos los proyectos usan este entorno base:
 
-### 📂 01 — Pruebas Iniciales
-
-Scripts independientes desarrollados para validar cada componente por separado antes de integrarlos. Son el punto de partida del proyecto.
-
-#### 📶 Conexión a Red LTE — `01_Pruebas_iniciales/RedLTE/`
-Configura el APN de Claro Colombia y verifica el registro en red LTE usando la librería **TinyGSM** con el SIM7670G.
-
-- Configura APN (`internet.comcel.com.co`)
-- Verifica señal y registro en red (`AT+CSQ`, `AT+CREG`)
-- Muestra estado por Serial Monitor
-
----
-
-#### ⚙️ Control de Motor DC — `01_Pruebas_iniciales/Controlar_MotorDC/`
-Control de velocidad de un motor DC usando el canal LEDC (PWM) del ESP32-S3.
-
-- Control de velocidad con `ledcWrite()`
-- Frenado por software
-
----
-
-#### 🖥️ Terminal de Comandos AT — `01_Pruebas_iniciales/Terminal_AT/`
-Bridge serial entre el PC y el módulo SIM7670G para enviar comandos AT manualmente desde el Serial Monitor.
-
-- Reenvío bidireccional: `PC → ESP32-S3 → SIM7670G` y viceversa
-- Útil para depuración y exploración del módem
-- Baudrate configurable
-
----
-
-#### 📡 Conexión a WiFi — `01_Pruebas_iniciales/Wifi/`
-Gestión básica de conectividad WiFi con el ESP32-S3.
-
-- Conexión a red WPA2
-- Reconexión automática si se pierde el enlace
-- Muestra IP asignada por Serial Monitor
-
----
-
-### 🔬 02 — Sistema Integrado: Monitoreo de Motor vía LTE → AWS — `02_RedLTE-MotorDC/`
-
-Proyecto principal que integra todo lo validado en las pruebas iniciales. El ESP32-S3 recolecta variables eléctricas y mecánicas de un motor DC en tiempo real, y las transmite mediante **LTE (TinyGSM)** a un servidor **HTTP en AWS**.
-
-#### Variables monitoreadas
-
-| Variable | Sensor / Fuente | Descripción |
-|---|---|---|
-| Voltaje (V) | INA219 (I²C) | Tensión en los bornes del motor |
-| Corriente (mA) | INA219 (I²C) | Consumo instantáneo del motor |
-| Potencia (mW) | INA219 (calculada) | Potencia eléctrica consumida |
-| Velocidad (RPM) | Encoder integrado del motor | Pulsos contados por interrupción |
-| PWM (%) | Potenciómetro + código | Duty cycle aplicado al L293D |
-
-#### Flujo de datos
-
-```
-Potenciómetro ──► PWM ──► L293D ──► Motor DC
-                                        │
-                              Encoder (RPM) ──────────────┐
-                              INA219 (V, I, P) ───────────┤
-                                                          ▼
-                                               ESP32-S3 (TinyGSM)
-                                                          │
-                                                    SIM7670G (LTE)
-                                                          │
-                                                   Claro Colombia
-                                                          │
-                                              Servidor HTTP en AWS
+```ini
+[env:esp32-s3-sim7670g]
+platform = espressif32
+board = esp32-s3-devkitc-1
+framework = arduino
+board_build.flash_size = 16MB
+board_build.flash_mode = qio
+board_build.psram_type = opi
+board_build.arduino.memory_type = qio_opi
+upload_port = COM6
+monitor_port = COM6
+monitor_speed = 115200
+upload_speed = 921600
 ```
 
-#### Librerías utilizadas
+Dependencias usadas segun el proyecto:
 
 ```ini
 lib_deps =
-    vshymanskyy/TinyGSM @ ^0.11.7
-    adafruit/Adafruit INA219 @ ^1.2.3
+    vshymanskyy/TinyGSM
+    adafruit/Adafruit INA219
+    adafruit/Adafruit SSD1306
+    adafruit/Adafruit GFX Library
 ```
 
-#### 📝 Registro de datos y conversión a CSV
+Para el SIM7670G se usa el perfil compatible de TinyGSM:
 
-Para poder realizar una comparación entre los datos enviados del motor y los datos recibidos en el servidor **HTTP en AWS**, se implementó un sistema de registro automático del monitor serial y su posterior conversión a `.csv`.
-
-En el archivo `platformio.ini` se agrega una línea de configuración que permite guardar lo que aparezca en el monitor serial como archivo.
-
-```ini
-[env:esp32-s3-devkitc-1]
-...
-monitor_filters = log2file
-...
+```cpp
+#define TINY_GSM_MODEM_SIM7600
+#include <TinyGsmClient.h>
 ```
 
-Esto genera un archivo con todo el flujo serial, incluyendo mensajes como:
+## 01 - Pruebas iniciales
 
-```
-[HTTP] Conectando al servidor...
-1500.25,2.30,12.50,28.75,200
-[HTTP] ✓ Datos enviados correctamente.
-```
+### `Controlar_MotorDC`
 
-Dado que el archivo `.log` contiene tanto datos como mensajes de depuración, se desarrolló un script en Python para extraer únicamente las líneas válidas y convertirlas a `.csv`.
+Valida el conjunto motor + encoder + INA219. El motor se maneja con PWM por LEDC en el pin `ENA`, la direccion queda fija con `IN1=HIGH` e `IN2=LOW`, y el valor PWM se cambia desde el monitor serial.
 
-```Python
-import re
-import sys
+- PWM inicial: `255`.
+- Entradas seriales validas: `0` para detener, o valores `1..255`.
+- Mide RPM cada `500 ms`.
+- Lee voltaje, corriente y potencia con INA219.
+- Encoder configurado con `PPR_MOTOR=12`, `GEAR_RATIO=90`, `CPR=1080`.
 
-patron = re.compile(r'^-?\d+\.\d+,-?\d+\.\d+,-?\d+\.\d+,-?\d+\.\d+,\d+')
+### `RedLTE`
 
-archivo_entrada = sys.argv[1]
-archivo_salida  = archivo_entrada.replace(".log", ".csv")
+Prueba la conexion celular del SIM7670G:
 
-with open(archivo_entrada, "r") as f_in, open(archivo_salida, "w") as f_out:
-    f_out.write("rpm,current_A,voltage_V,power_W,pwm\n")
-    for linea in f_in:
-        linea = linea.strip()
-        if patron.match(linea):
-            f_out.write(linea + "\n")
+- Sincroniza el modem con `AT`.
+- Desactiva eco con `ATE0`.
+- Verifica SIM con `AT+CPIN?`.
+- Espera registro de red con TinyGSM.
+- Consulta `AT+CSQ`, `AT+CREG?` y `AT+CEREG?`.
+- Conecta al APN `internet.comcel.com.co`.
+- Muestra IP local y hace ping a `8.8.8.8`.
+- Luego queda como terminal manual AT.
 
-print(f"CSV guardado en: {archivo_salida}")
-```
+### `Terminal_AT`
 
-##### Uso del script
+Puente serial bidireccional entre el monitor serial del PC y el SIM7670G. Sirve para probar comandos AT manualmente.
 
-Primero se debe ejecutar cualquier código que tenga visualización de datos en el monitor serial, este genera un archivo que termina en `.log`. Luego, en la terminal se ejecuta `python filtrar_log.py datos.log`, donde el archivo `datos.log` debe ser reemplazado por el nombre del archivo generado. Por último, esto genera un archivo `datos.csv` con la estructura deseada para poder ser usado en comparaciones.
+### `Wifi`
 
----
+Este proyecto no implementa conexion WiFi. El `main.cpp` es la plantilla inicial generada por PlatformIO con una funcion de ejemplo `myFunction`.
 
-### 📩 03 — Control de Variable por SMS — `03_Variable_SMS/`
+## 02 - `RedLTE-MotorDC`
 
-Proyecto de validación para controlar una variable interna del ESP32-S3 mediante mensajes SMS recibidos por el SIM7670G. La variable usada para la prueba es `pwm`.
+Integra motor DC, encoder, INA219 y envio HTTP por LTE.
 
-#### Funcionamiento
-
-1. Un usuario envía un SMS al número de la SIM instalada en el SIM7670G.
-2. El mensaje debe tener el formato:
-
-```text
-pwm valor
-```
-
-Ejemplo:
-
-```text
-pwm 230
-```
-
-3. El ESP32-S3 lee el SMS, extrae el número remitente y normaliza el contenido.
-4. Si el comando es válido, actualiza la variable `pwm`.
-5. El módulo responde por SMS al remitente confirmando el cambio.
-
-#### Validaciones implementadas
-
-- Acepta `pwm` en mayúsculas o minúsculas (`pwm 200`, `PWM 200`).
-- Elimina comillas envolventes cuando el módem entrega el contenido como `"pwm 200"`.
-- Tolera espacios extra entre comando y valor.
-- Decodifica contenido UCS2 hexadecimal cuando el módem entrega el SMS en ese formato.
-- Rechaza comandos desconocidos.
-- Valida que el PWM esté entre `0` y `255`.
-- Borra el SMS procesado con `AT+CMGD` para evitar llenar la memoria de la SIM.
-
-#### Comandos AT relevantes
-
-```text
-AT+CSCS="GSM"
-AT+CMGF=1
-AT+CPMS="SM","SM","SM"
-AT+CNMI=2,1,0,0,0
-AT+CMGR=<indice>
-AT+CMGD=<indice>
-```
-
----
-
-### 🚀 04 — Monitoreo LTE + Motor DC + Control por SMS — `04_RedLTE-MotorDC-SMS/`
-
-Proyecto final integrado. Combina el monitoreo del motor DC de `02_RedLTE-MotorDC` con el control remoto por SMS validado en `03_Variable_SMS`.
-
-La estructura principal de `02_RedLTE-MotorDC` se conserva: encoder, INA219, conexión LTE, empaquetado JSON y envío HTTP al servidor. La diferencia clave es que el control de PWM por potenciómetro fue eliminado y reemplazado por control mediante SMS.
-
-#### Variables monitoreadas y enviadas
-
-| Variable | Sensor / Fuente | Descripción |
-|---|---|---|
-| `rpm` | Encoder integrado del motor | Velocidad calculada a partir de pulsos por interrupción |
-| `current_A` | INA219 | Corriente instantánea en amperios |
-| `voltage_V` | INA219 | Voltaje del motor |
-| `power_W` | INA219 | Potencia consumida en watts |
-| `pwm` | SMS / `g_pwm_actual` | Duty cycle aplicado al L293D |
-
-#### Formato serial
-
-El monitor serial imprime los datos en formato CSV:
+- Controla el PWM con potenciometro en GPIO `9`.
+- Mapea ADC `0..4095` a PWM `0..255`.
+- Calcula RPM cada `5 s`.
+- Lee `current_A`, `voltage_V` y `power_W`.
+- Envia JSON por `POST /data` al servidor `18.219.119.53:5000`.
+- Imprime CSV por serial:
 
 ```text
 rpm,current_A,voltage_V,power_W,pwm
-0.00,-0.0001,2.516,0.0000,0
 ```
 
-El valor de PWM ya no se imprime en una línea separada como `[PWM] Valor actual`. Se refleja únicamente en la última columna del registro CSV.
+El `platformio.ini` incluye `monitor_filters = log2file` para guardar el monitor serial en archivo `.log`.
 
-#### Formato JSON enviado al servidor
+## 03 - `Variable_SMS`
 
-Cada muestra se empaqueta y se envía por HTTP al endpoint `/data`:
-
-```json
-{
-  "rpm": 0.00,
-  "current_A": -0.0001,
-  "voltage_V": 2.516,
-  "power_W": 0.0000,
-  "pwm": 200
-}
-```
-
-#### Control PWM por SMS
-
-El usuario envía un SMS con el formato:
+Valida recepcion y respuesta de SMS usando el SIM7670G. El comando soportado es:
 
 ```text
 pwm valor
@@ -314,226 +158,215 @@ Ejemplo:
 pwm 180
 ```
 
-Si el valor es válido, el ESP32-S3 ejecuta:
+Comportamiento:
 
-```cpp
-SetMotorPwm((uint8_t)nuevoPWM);
+- Configura SMS con `AT+CSCS="GSM"`, `AT+CMGF=1`, `AT+CPMS="SM","SM","SM"` y `AT+CNMI=2,1,0,0,0`.
+- Lee el indice entregado por `+CMTI`.
+- Extrae numero remitente y texto con `AT+CMGR`.
+- Normaliza mayusculas/minusculas, espacios y comillas.
+- Decodifica UCS2 hexadecimal cuando aplica.
+- Valida rango `0..255`.
+- Responde por SMS y borra el mensaje con `AT+CMGD`.
+- Reporta el valor PWM actual por serial cada `2 s`.
+
+## 04 - `RedLTE-MotorDC-SMS`
+
+Combina el envio de mediciones del proyecto `02` con control remoto por SMS.
+
+- El potenciometro ya no controla el PWM.
+- El comando `pwm valor` llama a `SetMotorPwm`.
+- Consulta `+CMTI` y tambien sondea no leidos con `AT+CMGL="REC UNREAD"` cada `2 s`.
+- Envia telemetria cada `5 s` a `18.219.119.53:5000`.
+- Imprime y envia:
+
+```json
+{
+  "rpm": 0.0,
+  "current_A": 0.0,
+  "voltage_V": 0.0,
+  "power_W": 0.0,
+  "pwm": 0
+}
 ```
 
-y responde al remitente:
+## 05 - `RedLTE_MotorDC_Pantalla`
 
-```text
-PWM actualizado a 180
-```
+Agrega una OLED SSD1306 128x32 al flujo de medicion y envio LTE.
 
-Si el comando no es válido, responde con un mensaje de error indicando el formato correcto o el rango permitido.
-
-#### Recepción robusta de SMS
-
-Además de escuchar la notificación inmediata `+CMTI`, el firmware consulta periódicamente mensajes no leídos:
-
-```text
-AT+CMGL="REC UNREAD"
-```
-
-Esto permite procesar comandos SMS incluso si el SIM7670G no entrega la notificación instantánea por UART o si esta se pierde mientras el sistema está enviando datos HTTP.
-
-#### Flujo general
-
-```text
-SMS "pwm valor" ──► SIM7670G ──► ESP32-S3 ──► SetMotorPwm()
-                                               │
-                                               ▼
-                                            L293D ──► Motor DC
-                                               │
-                         Encoder (RPM) ◄──────┘
-                         INA219 (V, I, P)
-                                               │
-                                               ▼
-                              JSON vía HTTP sobre LTE
-                                               │
-                                               ▼
-                          Servidor + dashboard Streamlit
-```
-
----
-
-### 🖥️ 05 — Monitoreo LTE + Motor DC + Pantalla OLED — `05_RedLTE_MotorDC_Pantalla/`
-
-Este proyecto agrega una pantalla **OLED SSD1306 128×32** al sistema de monitoreo LTE del motor DC. La pantalla permite observar el flujo del programa sin depender únicamente del monitor serial.
-
-#### Funciones principales
-
-- Muestra estados del sistema durante el arranque, la conexión LTE, el registro en red y el envío de datos.
-- Muestra mediciones del motor: RPM, corriente, voltaje, potencia y PWM aplicado.
-- Muestra respuestas de comandos AT relevantes del SIM7670G, por ejemplo:
-
-```text
-ATE0: OK
-CPIN: +CPIN: READY
-CSQ: +CSQ: ...
-CREG: +CREG: ...
-CEREG: +CEREG: ...
-```
-
-#### PWM de prueba
-
-En este proyecto se reemplazó temporalmente el control por potenciómetro por un valor fijo definido en el código. Esto se hizo para facilitar pruebas controladas del motor sin depender de una entrada analógica externa.
-
-El valor se ajusta en:
+- Muestra estados de arranque, red, APN, ping y servidor.
+- Muestra respuestas resumidas de comandos AT.
+- Muestra RPM, corriente, voltaje, potencia y PWM.
+- Usa PWM fijo de prueba:
 
 ```cpp
 const uint8_t kPwmPrueba = 120;
 ```
 
-El rango permitido sigue siendo de `0` a `255`, donde `0` apaga el motor y `255` aplica el máximo PWM.
+No incluye SMS ni dashboard de control; es una prueba de visualizacion local con OLED.
 
----
+## 06 - `GPS`
 
-### ✅ Final — Sistema Integrado Modular — `Final/`
+Prueba aislada del GNSS del SIM7670G.
 
-El proyecto `Final` combina las funcionalidades desarrolladas en `04_RedLTE-MotorDC-SMS` y `05_RedLTE_MotorDC_Pantalla`. El resultado es un sistema completo que mide variables del motor, envía datos por LTE a un servidor, muestra el estado del proceso en una pantalla OLED y permite cambiar el PWM mediante mensajes SMS.
+- Enciende GNSS con `AT+CGNSSPWR=1`.
+- Consulta posicion cada `3 s` con `AT+CGNSSINFO`.
+- Detecta cuando aun no hay fix.
+- Interpreta latitud y longitud como grados decimales.
+- Aplica signo por hemisferio `S` o `W`.
+- Imprime enlace de Google Maps.
 
-#### Funcionalidades integradas
+No usa motor, INA219, LTE de datos ni servidor.
 
-- Lectura de RPM mediante encoder.
-- Lectura de voltaje, corriente y potencia mediante el INA219.
-- Control del motor DC mediante PWM aplicado al driver L293D.
-- Conexión LTE con el SIM7670G usando TinyGSM.
-- Envío de datos al servidor HTTP en formato JSON.
-- Visualización en pantalla OLED del flujo del código, respuestas AT y mediciones.
-- Cambio remoto del PWM mediante SMS con el formato `pwm valor`.
-- Consulta periódica de SMS no leídos para evitar pérdida de comandos.
+## Final - Sistema integrado
 
-#### Comando SMS para cambiar el PWM
+El firmware en `Final/src/main.cpp` es la version mas completa del proyecto.
 
-El usuario debe enviar un SMS a la SIM instalada en el SIM7670G con el siguiente formato:
+### Funciones principales
 
-```text
-pwm valor
-```
+- Medicion de RPM con encoder cada `50 ms`.
+- Lectura de INA219 para corriente, voltaje y potencia.
+- Control del motor por PWM con L293D.
+- Control en lazo cerrado por P, PI, PD o PID.
+- Feedforward polinomial calibrado para el motor.
+- Modo manual de PWM desde dashboard.
+- Comando SMS `pwm valor` como mecanismo alterno.
+- OLED SSD1306 para estado y mediciones.
+- GNSS con `AT+CGNSSINFO`.
+- Parametros LTE tipo G-NetTrack: operador, tecnologia, MCC, MNC, TAC, Cell ID, PCI, banda, EARFCN, RSRP, RSRQ, RSSI, SINR, CSQ y ping.
+- Envio HTTP cada `1 s` a `18.226.103.103:5000`.
+- Recepcion de configuracion de control desde el servidor en la respuesta de cada `POST /data`.
 
-Ejemplo:
+### Control del motor
 
-```text
-pwm 180
-```
+El dashboard puede enviar:
 
-Si el valor es válido, el sistema actualiza el PWM del motor, muestra el cambio en la OLED y responde al remitente:
+- `running`: arranca o detiene el control.
+- `mode`: `control` para PID o `manual` para PWM directo.
+- `ctrl_type`: `P`, `PI`, `PD` o `PID`.
+- `setpoint`: referencia de RPM.
+- `kp`, `ki`, `kd`: ganancias del controlador.
+- `pwm_manual`: PWM directo `0..255`.
 
-```text
-PWM actualizado a 180
-```
+El firmware aplica cambios solo cuando cambia `version` en el servidor. Si el control se detiene, el PWM se lleva a `0`.
 
-Si el valor está fuera de rango o el comando no es reconocido, el sistema responde con un mensaje de error. El rango válido es de `0` a `255`.
+### Telemetria JSON
 
-#### Estructura modular del firmware final
-
-El proyecto `Final` fue dividido en varios archivos para mejorar la organización del código y facilitar el mantenimiento:
-
-| Archivo | Responsabilidad |
-|---|---|
-| `main.cpp` | Coordina el arranque, el ciclo principal, el muestreo, el envío de datos y la gestión de SMS. |
-| `config.h` | Centraliza pines, constantes, APN, servidor, tiempos de muestreo y límites de PWM. |
-| `motor.cpp` / `motor.h` | Inicializa el motor, controla el PWM y calcula las RPM a partir del encoder. |
-| `sensors.cpp` / `sensors.h` | Inicializa el INA219 y lee corriente, voltaje y potencia. |
-| `display_ui.cpp` / `display_ui.h` | Gestiona la pantalla OLED, los estados del sistema y las mediciones mostradas. |
-| `lte.cpp` / `lte.h` | Gestiona el SIM7670G, los comandos AT, la conexión LTE y el envío HTTP. |
-| `sms.cpp` / `sms.h` | Configura SMS, lee mensajes, valida comandos y actualiza el PWM. |
-| `telemetry.h` | Define la estructura de datos usada para transportar las mediciones del sistema. |
-
-#### Flujo general del proyecto final
-
-```text
-SMS "pwm valor" ──► SIM7670G ──► ESP32-S3 ──► Control PWM ──► L293D ──► Motor DC
-                                      │
-                                      ├──► OLED: estados, respuestas AT y mediciones
-                                      │
-                                      ├──► Encoder: cálculo de RPM
-                                      │
-                                      ├──► INA219: voltaje, corriente y potencia
-                                      │
-                                      └──► LTE: envío JSON al servidor HTTP
-```
-
-#### Formato JSON enviado por `Final`
+El firmware final envia un JSON con mediciones, control, GPS y red LTE:
 
 ```json
 {
-  "rpm": 0.00,
-  "current_A": 0.0000,
-  "voltage_V": 0.000,
-  "power_W": 0.0000,
-  "pwm": 180
+  "rpm": 24.8,
+  "current_A": 0.1200,
+  "voltage_V": 11.850,
+  "power_W": 1.4200,
+  "pwm": 132,
+  "setpoint": 25.0,
+  "error": 0.2,
+  "controller": "PID",
+  "running": true,
+  "ip": "10.x.x.x",
+  "lat": 10.987654,
+  "lon": -74.123456,
+  "lte": {
+    "operator": "Claro",
+    "tech": "LTE",
+    "mcc": 732,
+    "mnc": 101,
+    "tac": "...",
+    "cid": "...",
+    "pci": 0,
+    "band": "EUTRAN-BAND...",
+    "earfcn": 0,
+    "rsrp": 0,
+    "rsrq": 0,
+    "rssi": 0,
+    "sinr": 0,
+    "csq": 0,
+    "csq_dbm": 0,
+    "ping_ms": -1
+  }
 }
 ```
 
----
+### HTTP en el firmware final
 
-## ⚙️ Configuración en PlatformIO
+La version final no usa el `TinyGsmClient` manual para el POST principal. Usa la pila HTTP nativa del modem con comandos `AT+HTTPINIT`, `AT+HTTPPARA`, `AT+HTTPDATA`, `AT+HTTPACTION` y `AT+HTTPREAD`, enrutados por TinyGSM. Esto permite leer de forma mas confiable el cuerpo de respuesta del servidor.
 
-### Instalación del entorno
+## Servidor
 
-1. Instalar [VS Code](https://code.visualstudio.com/)
-2. Instalar la extensión **PlatformIO IDE** desde el Marketplace de VS Code
-3. Clonar este repositorio:
-   ```bash
-   git clone https://github.com/Manuel-Rangel-Dev/Sistema-IoT
-   ```
-4. Abrir la carpeta del proyecto que deseas usar en VS Code
-5. PlatformIO descargará automáticamente las dependencias al compilar (`Ctrl+Alt+B`)
+La carpeta `Servidor` contiene dos programas:
 
-### `platformio.ini` base
+### `server.py`
 
-```ini
-[env:esp32-s3-devkitc-1]
-platform      = espressif32
-board         = esp32-s3-devkitc-1
-framework     = arduino
-monitor_speed = 115200
+API Flask que corre en `0.0.0.0:5000`.
 
-lib_deps =
-    vshymanskyy/TinyGSM @ ^0.11.7
-    adafruit/Adafruit INA219 @ ^1.2.3
-    adafruit/Adafruit SSD1306
-    adafruit/Adafruit GFX Library
-```
+Endpoints:
 
-### Configuración de TinyGSM
-
-Agrega al inicio de `main.cpp`, **antes** de cualquier otro include:
-
-```cpp
-#define TINY_GSM_MODEM_SIM7600   // SIM7670G es compatible con este perfil
-#include <TinyGsmClient.h>
-```
-
----
-
-## 🔌 Pinout — ESP32-S3 ↔ SIM7670G
-
-| ESP32-S3 GPIO | SIM7670G Pin | Descripción |
+| Metodo | Ruta | Descripcion |
 |---|---|---|
-| GPIO 17 (TX) | RX | Datos hacia el módem |
-| GPIO 18 (RX) | TX | Datos desde el módem |
-| GPIO 45 | DTR | Control de encendido del módulo |
-| GND | GND | Tierra común |
-| — | VCC (4.2 V) | Alimentación externa dedicada |
+| `POST` | `/data` | Recibe telemetria del ESP32 y devuelve la configuracion de control vigente |
+| `GET` | `/readings?n=120` | Devuelve las ultimas `n` lecturas almacenadas en memoria |
+| `GET` | `/latest` | Devuelve la ultima lectura o `{"status":"OFF"}` |
+| `GET` | `/control` | Devuelve la configuracion de control |
+| `POST` | `/control` | Actualiza modo, setpoint, ganancias, PWM manual o estado |
+| `GET` | `/health` | Health check con estado y numero de lecturas |
 
-> Los pines pueden variar según tu breakout board del SIM7670G. Verifica el esquemático de tu módulo.
+El servidor conserva las ultimas `500` lecturas en memoria (`deque`) y usa zona horaria `America/Bogota`.
 
----
+### `app.py`
 
-## 🤝 Contribuciones
+Dashboard Streamlit conectado a:
 
-Repositorio de aprendizaje personal. Las sugerencias son bienvenidas — abre un [Issue](../../issues) o envía un Pull Request.
+```text
+http://18.226.103.103:5000
+```
 
----
+Vistas principales:
 
-## 📄 Licencia
+- Monitoreo: estado del motor, PWM, graficas de RPM/corriente/voltaje/potencia, tabla y descarga CSV.
+- Control: seleccion de P/PI/PD/PID, setpoint, `Kp`, `Ki`, `Kd`, iniciar/frenar y PWM manual.
+- Red LTE: operador, tecnologia, celda, banda, frecuencias estimadas, calidad de senal, ping y posicion GNSS.
 
-Distribuido bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más información.
+Dependencias Python:
 
----
+```bash
+pip install flask streamlit pandas numpy plotly requests pytz
+```
 
-*Desarrollado con ☕ y mucha paciencia con el Serial Monitor.*
+Ejecucion local:
+
+```bash
+python server.py
+streamlit run app.py
+```
+
+## Flujo del sistema final
+
+```text
+Dashboard Streamlit -- POST /control --> Flask
+        ^                              |
+        |                              v
+ GET /readings, /latest         Respuesta de POST /data
+        |                              |
+        |                              v
+ESP32-S3 + SIM7670G -- LTE HTTP --> POST /data
+        |
+        |-- Encoder -> RPM
+        |-- INA219 -> corriente, voltaje, potencia
+        |-- OLED -> estado y mediciones
+        |-- GNSS -> latitud/longitud
+        |-- AT+CPSI?/CSQ/COPS/CPING -> parametros LTE
+        `-- SMS "pwm valor" -> PWM directo
+```
+
+## Notas importantes
+
+- Las IP `18.219.119.53` y `18.226.103.103` estan quemadas en distintos firmwares. Si cambia la instancia EC2, actualiza `SERVER_HOST` en el firmware correspondiente y `SERVER_URL` en `Servidor/app.py`.
+- Los proyectos `02`, `04` y `05` envian cada `5 s`; el proyecto `Final` envia cada `1 s`.
+- El proyecto `Final` limita el setpoint entre `11` y `35 RPM`.
+- La posicion GNSS puede tardar varios minutos en tener fix y requiere antena con vista al cielo.
+- El almacenamiento del servidor es en memoria; al reiniciar `server.py` se pierden las lecturas acumuladas.
+
+## Licencia
+
+Distribuido bajo licencia MIT. Consulta el archivo `LICENSE`.
