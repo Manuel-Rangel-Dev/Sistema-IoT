@@ -1,4 +1,4 @@
-# ESP32-S3 + SIM7670G - Monitoreo, control y telemetria IoT
+﻿# ESP32-S3 + SIM7670G - Monitoreo, control y telemetría IoT
 
 [![PlatformIO](https://img.shields.io/badge/Built%20with-PlatformIO-orange?logo=platformio)](https://platformio.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -6,9 +6,9 @@
 [![Network](https://img.shields.io/badge/Network-LTE%20Claro%20Colombia-red)](https://www.claro.com.co/)
 [![Cloud](https://img.shields.io/badge/Cloud-AWS-FF9900?logo=amazonaws)](https://aws.amazon.com/)
 
-Repositorio de proyectos para una placa ESP32-S3 con modulo SIM7670G. El sistema evoluciona desde pruebas aisladas de hardware hasta una solucion final que mide un motor DC, envia telemetria por LTE a un servidor Flask, muestra datos en una OLED, obtiene posicion GNSS, consulta parametros de red LTE y permite controlar el motor desde un dashboard Streamlit o por SMS.
+Repositorio de proyectos para una placa ESP32-S3 con módulo SIM7670G. El sistema evoluciona desde pruebas aisladas de hardware hasta una solución final que mide un motor DC, envía telemetría por LTE a un servidor Flask, muestra datos en una OLED, obtiene posición GNSS, consulta parámetros de red LTE y permite controlar el motor desde un dashboard Streamlit o por SMS.
 
-Los firmwares estan hechos con Arduino Framework en PlatformIO y fueron configurados para red Claro Colombia con APN `internet.comcel.com.co`.
+Los firmwares están hechos con Arduino Framework en PlatformIO y fueron configurados para red Claro Colombia con APN `internet.comcel.com.co`.
 
 ## Estructura del repositorio
 
@@ -34,31 +34,31 @@ ESP32-S3-SIM7670G-4G/
 
 ## Hardware usado
 
-| Componente | Descripcion |
+| Componente | Descripción |
 |---|---|
 | Microcontrolador | ESP32-S3 DevKit / placa ESP32-S3-SIM7670G |
-| Modulo celular | SIM7670G LTE Cat-1 con GNSS |
+| Módulo celular | SIM7670G LTE Cat-1 con GNSS |
 | Driver de motor | L293D |
 | Motor DC | Motor con encoder integrado |
-| Sensor electrico | INA219 por I2C |
+| Sensor eléctrico | INA219 por I2C |
 | Pantalla | OLED SSD1306 128x32 por I2C |
 | SIM | SIM Claro Colombia con datos y SMS |
-| Alimentacion | Fuente externa para motor y modulo celular |
+| Alimentación | Fuente externa para motor y módulo celular |
 
-> Nota: el SIM7670G puede consumir picos altos durante transmision LTE. Usa una alimentacion estable y tierra comun entre ESP32, modulo, driver y sensores.
+> Nota: el SIM7670G puede consumir picos altos durante transmisión LTE. Usa una alimentación estable y tierra común entre ESP32, módulo, driver y sensores.
 
 ## Pinout principal
 
-| Funcion | GPIO ESP32-S3 |
+| Función | GPIO ESP32-S3 |
 |---|---:|
 | SIM7670G RX/TX UART | RX `17`, TX `18` |
 | SIM7670G DTR | `45` |
 | Encoder A/B | `13`, `14` |
 | L293D IN1/IN2/ENA | `11`, `12`, `10` |
 | I2C SDA/SCL | `16`, `15` |
-| Potenciometro en `02` | `9` |
+| Potenciómetro en `02` | `9` |
 
-## Configuracion PlatformIO
+## Configuración PlatformIO
 
 Todos los proyectos usan este entorno base:
 
@@ -77,7 +77,7 @@ monitor_speed = 115200
 upload_speed = 921600
 ```
 
-Dependencias usadas segun el proyecto:
+Dependencias usadas según el proyecto:
 
 ```ini
 lib_deps =
@@ -98,19 +98,19 @@ Para el SIM7670G se usa el perfil compatible de TinyGSM:
 
 ### `Controlar_MotorDC`
 
-Valida el conjunto motor + encoder + INA219. El motor se maneja con PWM por LEDC en el pin `ENA`, la direccion queda fija con `IN1=HIGH` e `IN2=LOW`, y el valor PWM se cambia desde el monitor serial.
+Valida el conjunto motor + encoder + INA219. El motor se maneja con PWM por LEDC en el pin `ENA`, la dirección queda fija con `IN1=HIGH` e `IN2=LOW`, y el valor PWM se cambia desde el monitor serial.
 
 - PWM inicial: `255`.
-- Entradas seriales validas: `0` para detener, o valores `1..255`.
+- Entradas seriales válidas: `0` para detener, o valores `1..255`.
 - Mide RPM cada `500 ms`.
 - Lee voltaje, corriente y potencia con INA219.
 - Encoder configurado con `PPR_MOTOR=12`, `GEAR_RATIO=90`, `CPR=1080`.
 
 ### `RedLTE`
 
-Prueba la conexion celular del SIM7670G:
+Prueba la conexión celular del SIM7670G:
 
-- Sincroniza el modem con `AT`.
+- Sincroniza el módem con `AT`.
 - Desactiva eco con `ATE0`.
 - Verifica SIM con `AT+CPIN?`.
 - Espera registro de red con TinyGSM.
@@ -125,17 +125,17 @@ Puente serial bidireccional entre el monitor serial del PC y el SIM7670G. Sirve 
 
 ### `Wifi`
 
-Este proyecto no implementa conexion WiFi. El `main.cpp` es la plantilla inicial generada por PlatformIO con una funcion de ejemplo `myFunction`.
+Este proyecto no implementa conexión WiFi. El `main.cpp` es la plantilla inicial generada por PlatformIO con una función de ejemplo `myFunction`.
 
 ## 02 - `RedLTE-MotorDC`
 
-Integra motor DC, encoder, INA219 y envio HTTP por LTE.
+Integra motor DC, encoder, INA219 y envío HTTP por LTE.
 
-- Controla el PWM con potenciometro en GPIO `9`.
+- Controla el PWM con potenciómetro en GPIO `9`.
 - Mapea ADC `0..4095` a PWM `0..255`.
 - Calcula RPM cada `5 s`.
 - Lee `current_A`, `voltage_V` y `power_W`.
-- Envia JSON por `POST /data` al servidor `18.219.119.53:5000`.
+- Envía JSON por `POST /data` al servidor `18.219.119.53:5000`.
 - Imprime CSV por serial:
 
 ```text
@@ -146,7 +146,7 @@ El `platformio.ini` incluye `monitor_filters = log2file` para guardar el monitor
 
 ## 03 - `Variable_SMS`
 
-Valida recepcion y respuesta de SMS usando el SIM7670G. El comando soportado es:
+Valida recepción y respuesta de SMS usando el SIM7670G. El comando soportado es:
 
 ```text
 pwm valor
@@ -161,9 +161,9 @@ pwm 180
 Comportamiento:
 
 - Configura SMS con `AT+CSCS="GSM"`, `AT+CMGF=1`, `AT+CPMS="SM","SM","SM"` y `AT+CNMI=2,1,0,0,0`.
-- Lee el indice entregado por `+CMTI`.
-- Extrae numero remitente y texto con `AT+CMGR`.
-- Normaliza mayusculas/minusculas, espacios y comillas.
+- Lee el índice entregado por `+CMTI`.
+- Extrae número remitente y texto con `AT+CMGR`.
+- Normaliza mayúsculas/minúsculas, espacios y comillas.
 - Decodifica UCS2 hexadecimal cuando aplica.
 - Valida rango `0..255`.
 - Responde por SMS y borra el mensaje con `AT+CMGD`.
@@ -171,13 +171,13 @@ Comportamiento:
 
 ## 04 - `RedLTE-MotorDC-SMS`
 
-Combina el envio de mediciones del proyecto `02` con control remoto por SMS.
+Combina el envío de mediciones del proyecto `02` con control remoto por SMS.
 
-- El potenciometro ya no controla el PWM.
+- El potenciómetro ya no controla el PWM.
 - El comando `pwm valor` llama a `SetMotorPwm`.
-- Consulta `+CMTI` y tambien sondea no leidos con `AT+CMGL="REC UNREAD"` cada `2 s`.
-- Envia telemetria cada `5 s` a `18.219.119.53:5000`.
-- Imprime y envia:
+- Consulta `+CMTI` y también sondea no leídos con `AT+CMGL="REC UNREAD"` cada `2 s`.
+- Envía telemetría cada `5 s` a `18.219.119.53:5000`.
+- Imprime y envía:
 
 ```json
 {
@@ -191,7 +191,7 @@ Combina el envio de mediciones del proyecto `02` con control remoto por SMS.
 
 ## 05 - `RedLTE_MotorDC_Pantalla`
 
-Agrega una OLED SSD1306 128x32 al flujo de medicion y envio LTE.
+Agrega una OLED SSD1306 128x32 al flujo de medición y envío LTE.
 
 - Muestra estados de arranque, red, APN, ping y servidor.
 - Muestra respuestas resumidas de comandos AT.
@@ -202,15 +202,15 @@ Agrega una OLED SSD1306 128x32 al flujo de medicion y envio LTE.
 const uint8_t kPwmPrueba = 120;
 ```
 
-No incluye SMS ni dashboard de control; es una prueba de visualizacion local con OLED.
+No incluye SMS ni dashboard de control; es una prueba de visualización local con OLED.
 
 ## 06 - `GPS`
 
 Prueba aislada del GNSS del SIM7670G.
 
 - Enciende GNSS con `AT+CGNSSPWR=1`.
-- Consulta posicion cada `3 s` con `AT+CGNSSINFO`.
-- Detecta cuando aun no hay fix.
+- Consulta posición cada `3 s` con `AT+CGNSSINFO`.
+- Detecta cuando aún no hay fix.
 - Interpreta latitud y longitud como grados decimales.
 - Aplica signo por hemisferio `S` o `W`.
 - Imprime enlace de Google Maps.
@@ -219,11 +219,11 @@ No usa motor, INA219, LTE de datos ni servidor.
 
 ## Final - Sistema integrado
 
-El firmware en `Final/src/main.cpp` es la version mas completa del proyecto.
+El firmware en `Final/src/main.cpp` es la versión más completa del proyecto.
 
 ### Funciones principales
 
-- Medicion de RPM con encoder cada `50 ms`.
+- Medición de RPM con encoder cada `50 ms`.
 - Lectura de INA219 para corriente, voltaje y potencia.
 - Control del motor por PWM con L293D.
 - Control en lazo cerrado por P, PI, PD o PID.
@@ -232,9 +232,9 @@ El firmware en `Final/src/main.cpp` es la version mas completa del proyecto.
 - Comando SMS `pwm valor` como mecanismo alterno.
 - OLED SSD1306 para estado y mediciones.
 - GNSS con `AT+CGNSSINFO`.
-- Parametros LTE tipo G-NetTrack: operador, tecnologia, MCC, MNC, TAC, Cell ID, PCI, banda, EARFCN, RSRP, RSRQ, RSSI, SINR, CSQ y ping.
-- Envio HTTP cada `1 s` a `18.226.103.103:5000`.
-- Recepcion de configuracion de control desde el servidor en la respuesta de cada `POST /data`.
+- Parámetros LTE tipo G-NetTrack: operador, tecnología, MCC, MNC, TAC, Cell ID, PCI, banda, EARFCN, RSRP, RSRQ, RSSI, SINR, CSQ y ping.
+- Envío HTTP cada `1 s` a `18.226.103.103:5000`.
+- Recepción de configuración de control desde el servidor en la respuesta de cada `POST /data`.
 
 ### Control del motor
 
@@ -249,9 +249,9 @@ El dashboard puede enviar:
 
 El firmware aplica cambios solo cuando cambia `version` en el servidor. Si el control se detiene, el PWM se lleva a `0`.
 
-### Telemetria JSON
+### Telemetría JSON
 
-El firmware final envia un JSON con mediciones, control, GPS y red LTE:
+El firmware final envía un JSON con mediciones, control, GPS y red LTE:
 
 ```json
 {
@@ -290,7 +290,7 @@ El firmware final envia un JSON con mediciones, control, GPS y red LTE:
 
 ### HTTP en el firmware final
 
-La version final no usa el `TinyGsmClient` manual para el POST principal. Usa la pila HTTP nativa del modem con comandos `AT+HTTPINIT`, `AT+HTTPPARA`, `AT+HTTPDATA`, `AT+HTTPACTION` y `AT+HTTPREAD`, enrutados por TinyGSM. Esto permite leer de forma mas confiable el cuerpo de respuesta del servidor.
+La versión final no usa el `TinyGsmClient` manual para el POST principal. Usa la pila HTTP nativa del módem con comandos `AT+HTTPINIT`, `AT+HTTPPARA`, `AT+HTTPDATA`, `AT+HTTPACTION` y `AT+HTTPREAD`, enrutados por TinyGSM. Esto permite leer de forma más confiable el cuerpo de respuesta del servidor.
 
 ## Servidor
 
@@ -302,16 +302,16 @@ API Flask que corre en `0.0.0.0:5000`.
 
 Endpoints:
 
-| Metodo | Ruta | Descripcion |
+| Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/data` | Recibe telemetria del ESP32 y devuelve la configuracion de control vigente |
-| `GET` | `/readings?n=120` | Devuelve las ultimas `n` lecturas almacenadas en memoria |
-| `GET` | `/latest` | Devuelve la ultima lectura o `{"status":"OFF"}` |
-| `GET` | `/control` | Devuelve la configuracion de control |
+| `POST` | `/data` | Recibe telemetría del ESP32 y devuelve la configuración de control vigente |
+| `GET` | `/readings?n=120` | Devuelve las últimas `n` lecturas almacenadas en memoria |
+| `GET` | `/latest` | Devuelve la última lectura o `{"status":"OFF"}` |
+| `GET` | `/control` | Devuelve la configuración de control |
 | `POST` | `/control` | Actualiza modo, setpoint, ganancias, PWM manual o estado |
-| `GET` | `/health` | Health check con estado y numero de lecturas |
+| `GET` | `/health` | Health check con estado y número de lecturas |
 
-El servidor conserva las ultimas `500` lecturas en memoria (`deque`) y usa zona horaria `America/Bogota`.
+El servidor conserva las últimas `500` lecturas en memoria (`deque`) y usa zona horaria `America/Bogota`.
 
 ### `app.py`
 
@@ -323,9 +323,9 @@ http://18.226.103.103:5000
 
 Vistas principales:
 
-- Monitoreo: estado del motor, PWM, graficas de RPM/corriente/voltaje/potencia, tabla y descarga CSV.
-- Control: seleccion de P/PI/PD/PID, setpoint, `Kp`, `Ki`, `Kd`, iniciar/frenar y PWM manual.
-- Red LTE: operador, tecnologia, celda, banda, frecuencias estimadas, calidad de senal, ping y posicion GNSS.
+- Monitoreo: estado del motor, PWM, gráficas de RPM/corriente/voltaje/potencia, tabla y descarga CSV.
+- Control: selección de P/PI/PD/PID, setpoint, `Kp`, `Ki`, `Kd`, iniciar/frenar y PWM manual.
+- Red LTE: operador, tecnología, celda, banda, frecuencias estimadas, calidad de señal, ping y posición GNSS.
 
 Dependencias Python:
 
@@ -333,7 +333,7 @@ Dependencias Python:
 pip install flask streamlit pandas numpy plotly requests pytz
 ```
 
-Ejecucion local:
+Ejecución local:
 
 ```bash
 python server.py
@@ -355,18 +355,19 @@ ESP32-S3 + SIM7670G -- LTE HTTP --> POST /data
         |-- INA219 -> corriente, voltaje, potencia
         |-- OLED -> estado y mediciones
         |-- GNSS -> latitud/longitud
-        |-- AT+CPSI?/CSQ/COPS/CPING -> parametros LTE
+        |-- AT+CPSI?/CSQ/COPS/CPING -> parámetros LTE
         `-- SMS "pwm valor" -> PWM directo
 ```
 
 ## Notas importantes
 
-- Las IP `18.219.119.53` y `18.226.103.103` estan quemadas en distintos firmwares. Si cambia la instancia EC2, actualiza `SERVER_HOST` en el firmware correspondiente y `SERVER_URL` en `Servidor/app.py`.
-- Los proyectos `02`, `04` y `05` envian cada `5 s`; el proyecto `Final` envia cada `1 s`.
+- Las IP `18.219.119.53` y `18.226.103.103` están quemadas en distintos firmwares. Si cambia la instancia EC2, actualiza `SERVER_HOST` en el firmware correspondiente y `SERVER_URL` en `Servidor/app.py`.
+- Los proyectos `02`, `04` y `05` envían cada `5 s`; el proyecto `Final` envía cada `1 s`.
 - El proyecto `Final` limita el setpoint entre `11` y `35 RPM`.
-- La posicion GNSS puede tardar varios minutos en tener fix y requiere antena con vista al cielo.
+- La posición GNSS puede tardar varios minutos en tener fix y requiere antena con vista al cielo.
 - El almacenamiento del servidor es en memoria; al reiniciar `server.py` se pierden las lecturas acumuladas.
 
 ## Licencia
 
 Distribuido bajo licencia MIT. Consulta el archivo `LICENSE`.
+
